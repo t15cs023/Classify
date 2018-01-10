@@ -10,7 +10,7 @@ public class Classify {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		ArrayList<ArrayList<Word>> list = tfidfrun();
+		ArrayList<ArrayList<Word>> list = signalnoiseratiorun();
 		ArrayList<ArrayList<Word>> queryList = queryrun();
 		ArrayList<ArrayList<Result>> searchResultCos = new ArrayList<>();
 		ArrayList<ArrayList<Result>> searchResultJac = new ArrayList<>();
