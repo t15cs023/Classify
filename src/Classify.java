@@ -121,7 +121,7 @@ public class Classify {
 		}
 		System.out.println();
 	}
-	
+	 
 	private static ArrayList<Result> findLargests(double[] listResult, int size) {
 		ArrayList<Result> result = new ArrayList<>();
 		double max = -10000;
