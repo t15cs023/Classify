@@ -14,8 +14,10 @@ public class Classify {
 		ArrayList<ArrayList<Word>> queryList = queryrun();
 		ArrayList<ArrayList<Result>> searchResultCos = new ArrayList<>();
 		ArrayList<ArrayList<Result>> searchResultCosWithoutTFIDF = new ArrayList<>();
+		ArrayList<ArrayList<Result>> searchResultCosWithoutNos = new ArrayList<>();
 		ArrayList<ArrayList<Result>> searchResultJac = new ArrayList<>();
 		ArrayList<ArrayList<Result>> searchResultJacWithoutTFIDF = new ArrayList<>();
+		ArrayList<ArrayList<Result>> searchResultJacWithoutNos = new ArrayList<>();
 		ArrayList<ArrayList<Result>> searchResultDice = new ArrayList<>();
 		ArrayList<ArrayList<Result>> searchResultSimpson = new ArrayList<>();
 		
@@ -43,6 +45,18 @@ public class Classify {
 		}
 		
 		System.out.println();
+		System.out.println("Cosine without numbers");
+		//Create cosineMeasurement result list
+		for(int i = 0; i < queryList.size(); i++) {
+			double[] listResult = new double[list.size()];
+			for(int j = 0; j < list.size(); j++) {
+				listResult[j] = cosineCalcWithoutNos(list.get(j),queryList.get(i));
+			}
+			ArrayList<Result> result = findLargests(listResult, list.size());
+			searchResultCosWithoutNos.add(result);
+		}
+		
+		System.out.println();
 		System.out.println("Jaccard");
 		//Create jaccardMeasurement result list
 		for(int i = 0; i < queryList.size(); i++) {
@@ -55,7 +69,7 @@ public class Classify {
 		}
 		
 		System.out.println();
-		System.out.println("Jaccard");
+		System.out.println("Jaccard without TFIDF");
 		//Create jaccardMeasurement result list
 		for(int i = 0; i < queryList.size(); i++) {
 			double[] listResult = new double[list.size()];
@@ -64,6 +78,18 @@ public class Classify {
 			}
 			ArrayList<Result> result = findLargests(listResult, list.size());
 			searchResultJacWithoutTFIDF.add(result);
+		}
+		
+		System.out.println();
+		System.out.println("Jaccard without number");
+		//Create jaccardMeasurement result list
+		for(int i = 0; i < queryList.size(); i++) {
+			double[] listResult = new double[list.size()];
+			for(int j = 0; j < list.size(); j++) {
+				listResult[j] = jaccardCalcWithoutNos(list.get(j),queryList.get(i));
+			}
+			ArrayList<Result> result = findLargests(listResult, list.size());
+			searchResultJacWithoutNos.add(result);
 		}
 		
 		System.out.println();
@@ -94,10 +120,14 @@ public class Classify {
 		printResult(searchResultCos);
 		System.out.println("Printing cosinewttfidf measurement results...");
 		printResult(searchResultCosWithoutTFIDF);
+		System.out.println("Printing cosinewtnumbers measurement results...");
+		printResult(searchResultCosWithoutNos);
 		System.out.println("Printing jaccard measurement results...");
 		printResult(searchResultJac);			
 		System.out.println("Printing jaccardwttfidf measurement results...");
 		printResult(searchResultJacWithoutTFIDF);		
+		System.out.println("Printing jaccardwtnos measurement results...");
+		printResult(searchResultJacWithoutNos);		
 		System.out.println("Printing dice measurement results...");
 		printResult(searchResultDice);
 		System.out.println("Printing simpson measurement results...");
@@ -192,6 +222,42 @@ public class Classify {
 		return result;
 	}
 	
+	private static double cosineCalcWithoutNos(ArrayList<Word> subWordList, ArrayList<Word> subQueryList) {
+		double x2 = 0.0;
+		for(int i = 0; i < subWordList.size(); i++) {
+			double x = subWordList.get(i).return_val();
+			x2 += x*x;
+		}
+		double y2 = 0.0;
+		for(int i = 0; i < subQueryList.size(); i++) {
+			double y=subQueryList.get(i).return_val();
+			y2 += y*y;
+		}
+		double inner_product = 0.0;
+		for(int i = 0; i < subQueryList.size(); i++) {
+			String currentQSubWord = subQueryList.get(i).return_word();
+			double currentQSubVal = subQueryList.get(i).return_val();
+			for(int j = 0; j < subWordList.size(); j++) {
+				String currentLSubWord = subWordList.get(j).return_word();
+				double currentLSubVal = subWordList.get(j).return_val();
+				if(currentQSubWord.equals(currentLSubWord)) {
+					boolean flag = false;
+					for(int k = 0; k < 10; k++) {
+						if(currentQSubWord.equals(Integer.toString(k)))
+							flag = true;
+					}
+					if(!flag)
+						inner_product += currentQSubVal * currentLSubVal; 
+				}
+			}
+		}
+		double down = Math.sqrt(x2*y2);
+		double result = inner_product/down;
+		System.out.println("x2:" + x2 + " y2:" + y2 + " inner_product:" + inner_product);
+		System.out.println(result);
+		return result;
+	}
+	
 	private static double jaccardCalc(ArrayList<Word> subWordList, ArrayList<Word> subQueryList) {
 		double x2 = 0.0;
 		for(int i = 0; i < subWordList.size(); i++) {
@@ -212,6 +278,45 @@ public class Classify {
 				double currentLSubVal = subWordList.get(j).return_val();
 				if(currentQSubWord.equals(currentLSubWord)) {
 					inner_product += currentQSubVal * currentLSubVal; 
+				}
+			}
+		}
+		double up = inner_product;
+		double down = x2+y2-inner_product;
+		double result = up/down;
+		System.out.println("x2:" + x2 + " y2:" + y2 + " inner_product:" + inner_product);
+		System.out.println(result);
+		return result;
+	}
+	
+	private static double jaccardCalcWithoutNos(ArrayList<Word> subWordList, ArrayList<Word> subQueryList) {
+		double x2 = 0.0;
+		for(int i = 0; i < subWordList.size(); i++) {
+			double x = subWordList.get(i).return_val();
+			x2 += x*x;
+		}
+		double y2 = 0.0;
+		for(int i = 0; i < subQueryList.size(); i++) {
+			double y=subQueryList.get(i).return_val();
+			y2 += y*y;
+		}
+		double inner_product = 0.0;
+		for(int i = 0; i < subQueryList.size(); i++) {
+			String currentQSubWord = subQueryList.get(i).return_word();
+			double currentQSubVal = subQueryList.get(i).return_val();
+			for(int j = 0; j < subWordList.size(); j++) {
+				String currentLSubWord = subWordList.get(j).return_word();
+				double currentLSubVal = subWordList.get(j).return_val();
+				if(currentQSubWord.equals(currentLSubWord)) {
+					boolean flag = false;
+					for(int k = 0; k < 10; k++) {
+						if(currentQSubWord.equals(Integer.toString(k))) {
+							System.out.println(currentLSubWord + " " +currentLSubVal);
+							flag = true;
+						}
+					}
+					if(!flag)
+						inner_product += currentQSubVal * currentLSubVal; 
 				}
 			}
 		}
