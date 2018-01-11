@@ -11,12 +11,11 @@ public class Classify {
 	 */
 	public static void main(String[] args) {
 		ArrayList<ArrayList<Word>> list = tfidfrun();
+		//ArrayList<ArrayList<Word>> list = freqrun();
 		ArrayList<ArrayList<Word>> queryList = queryrun();
 		ArrayList<ArrayList<Result>> searchResultCos = new ArrayList<>();
-		ArrayList<ArrayList<Result>> searchResultCosWithoutTFIDF = new ArrayList<>();
 		ArrayList<ArrayList<Result>> searchResultCosWithoutNos = new ArrayList<>();
 		ArrayList<ArrayList<Result>> searchResultJac = new ArrayList<>();
-		ArrayList<ArrayList<Result>> searchResultJacWithoutTFIDF = new ArrayList<>();
 		ArrayList<ArrayList<Result>> searchResultJacWithoutNos = new ArrayList<>();
 		ArrayList<ArrayList<Result>> searchResultDice = new ArrayList<>();
 		ArrayList<ArrayList<Result>> searchResultSimpson = new ArrayList<>();
@@ -30,18 +29,6 @@ public class Classify {
 			}
 			ArrayList<Result> result = findLargests(listResult, list.size());
 			searchResultCos.add(result);
-		}
-		
-		System.out.println();
-		System.out.println("Cosine without tfidf");
-		//Create cosineMeasurement result list
-		for(int i = 0; i < queryList.size(); i++) {
-			double[] listResult = new double[list.size()];
-			for(int j = 0; j < list.size(); j++) {
-				listResult[j] = cosineCalcWithoutTFIDF(list.get(j),queryList.get(i));
-			}
-			ArrayList<Result> result = findLargests(listResult, list.size());
-			searchResultCosWithoutTFIDF.add(result);
 		}
 		
 		System.out.println();
@@ -66,18 +53,6 @@ public class Classify {
 			}
 			ArrayList<Result> result = findLargests(listResult, list.size());
 			searchResultJac.add(result);
-		}
-		
-		System.out.println();
-		System.out.println("Jaccard without TFIDF");
-		//Create jaccardMeasurement result list
-		for(int i = 0; i < queryList.size(); i++) {
-			double[] listResult = new double[list.size()];
-			for(int j = 0; j < list.size(); j++) {
-				listResult[j] = jaccardCalcWithoutTFIDF(list.get(j),queryList.get(i));
-			}
-			ArrayList<Result> result = findLargests(listResult, list.size());
-			searchResultJacWithoutTFIDF.add(result);
 		}
 		
 		System.out.println();
@@ -118,14 +93,10 @@ public class Classify {
 		
 		System.out.println("Printing cosine measurement results...");
 		printResult(searchResultCos);
-		System.out.println("Printing cosinewttfidf measurement results...");
-		printResult(searchResultCosWithoutTFIDF);
 		System.out.println("Printing cosinewtnumbers measurement results...");
 		printResult(searchResultCosWithoutNos);
 		System.out.println("Printing jaccard measurement results...");
 		printResult(searchResultJac);			
-		System.out.println("Printing jaccardwttfidf measurement results...");
-		printResult(searchResultJacWithoutTFIDF);		
 		System.out.println("Printing jaccardwtnos measurement results...");
 		printResult(searchResultJacWithoutNos);		
 		System.out.println("Printing dice measurement results...");
@@ -527,6 +498,141 @@ public class Classify {
 		return l;
 	}
 	
+	public static ArrayList<ArrayList<Word>> freqrun() {
+		/* ここからtrain.freqのファイル読み込み処理 */
+		ArrayList<ArrayList<String>> temp = new ArrayList<>();
+		String fileName = "train.freq";
+		String train[][];
+		int train_height, train_width;
+		try(BufferedReader b = new BufferedReader(new FileReader(fileName)))
+		{
+			String currentLine;
+			while((currentLine = b.readLine()) != null) {
+				if(currentLine.isEmpty())
+					continue;
+
+
+				ArrayList<String> rows = new ArrayList<>();
+				String[] line = currentLine.trim().split(" ");
+				for(String string:line) {
+					if(!string.isEmpty()) {
+						rows.add(string);
+					}
+				}
+				temp.add(rows);
+			}
+
+		}
+		catch(IOException e) {
+			;
+		}
+		train_height = temp.size();
+		train_width = temp.get(0).size();
+		train = new String[train_height][train_width];
+		for(int y = 0; y < train_height; y++) {
+			for(int x = 0; x < train_width; x++) {
+				train[y][x] = temp.get(y).get(x);
+			}
+		}
+		/* ここまでtrain.freqのファイル読み込み処理 */
+
+		/* 読み込み確認用 */
+		/*
+		for(int y = 0; y < train_height; y++) {
+			for(int x = 0; x < train_width; x++) {
+				System.out.print(train[y][x] + " ");
+			}
+			System.out.println();
+		}
+		 */
+
+		String trainwdf[][] = new String[train_height][train_width+2];
+		for(int y = 0; y < train_height; y++) {
+			for(int x = 0; x < train_width; x++) {
+				trainwdf[y][x] = train[y][x];
+			}
+			trainwdf[y][train_width] = "0";
+		}
+
+		/* ある単語に対して全文書のtfを計算し、4番目の要素に保存する */
+		for(int y = 0; y < train_height; y++) {
+			int count = 0;
+			for(int ysub = 0; ysub < train_height; ysub++) {
+				if(trainwdf[y][1].equals(trainwdf[ysub][1])) {
+					count = Integer.parseInt(trainwdf[y][3]);
+					count += Integer.parseInt(trainwdf[ysub][2]);
+					trainwdf[y][3] = Integer.toString(count);
+				}
+			}
+			trainwdf[y][4] = Double.toString(Double.parseDouble(trainwdf[y][2])/Double.parseDouble(trainwdf[y][3]));
+		}
+		
+		/* tfの確認用 */
+		/*
+		System.out.println();
+		for(int y = 0; y < train_height; y++) {
+			for(int x = 0; x < train_width+2; x++) {
+				System.out.print(trainwdf[y][x] + " ");
+			}
+			System.out.println();
+		}
+		System.out.println();
+		*/
+		
+		/* tfidfが5番目の要素となる配列を生成し、計算する */
+		String trainwnw[][] = new String[train_height][train_width+3];
+		for(int y = 0; y < train_height; y++) {
+			for(int x = 0; x < train_width+2; x++) {
+				trainwnw[y][x] = trainwdf[y][x];
+			}
+		}
+		for(int y = 0; y < train_height; y++) {
+			double count = 0;
+			for(int ysub = 0; ysub < train_height; ysub++) {
+				if(trainwnw[y][1].equals(trainwnw[ysub][1])) {
+					double tmp = Double.parseDouble(trainwnw[y][4]) * (log2(Double.parseDouble(trainwnw[y][4])));
+					count += tmp;
+				}
+			}
+			if(count != 0.0)
+				count = -1 * count;
+			double weight = log2(Double.parseDouble(trainwnw[y][3])) - count;
+			trainwnw[y][5] = Double.toString(weight);
+		}
+
+		/* 最終的なリスト確認用 */
+		for(int y = 0; y < train_height; y++) {
+			for(int x = 0; x < train_width+3; x++) {
+				System.out.print(trainwnw[y][x] + " ");
+			}
+			System.out.println();
+		}
+		
+		/* 管理を簡単にするために、ArrayListに保存する */
+		ArrayList<ArrayList<Word>> l = new ArrayList<>();
+		ArrayList<Word> w = new ArrayList<>();
+		for(int i = 0; i < 8; i++) {
+			w = new ArrayList<>();
+			//ArrayListはジャンルを保持できないため、0:国際, 1:経済, ..., 7:読書 のようにジャンルを数値化する
+			String genre[] = {"国際", "経済", "家庭", "科学", "芸能", "スポーツ", "文化", "読書"};
+			for(int y = 0; y < train_height; y++) {
+				if(trainwnw[y][0].equals(genre[i])) {
+					w.add(new Word(trainwnw[y][1], Double.parseDouble(trainwnw[y][2])));
+				}
+			}
+			l.add(w);
+		}
+		/* リスト確認用 */
+		/*
+		for(int i = 0; i < l.size(); i++) {
+			for(int j = 0; j < l.get(i).size(); j++) {
+				Word currentw = l.get(i).get(j);
+				System.out.println(currentw.return_word() + " " + currentw.return_val());
+			}
+		}
+		*/
+		return l;
+	}
 	/**
 	 * テストデータの読み込みを行い、
 	 * 1つの文書に属する単語とその出現回数を1つのリストに保存し、全文書を扱うリストにそのリストを保存する。
