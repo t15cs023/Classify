@@ -12,13 +12,14 @@ public class Classify {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		ArrayList<ArrayList<Word>> list = tfidfrun();
+		/* freqrun()とqueryrun()は出現回数を重みにする */
 		//ArrayList<ArrayList<Word>> list = freqrun();
-		ArrayList<ArrayList<Word>> queryList = queryrun(list);
+		//ArrayList<ArrayList<Word>> queryList = queryrun();
+		/* freqrun()とqueryrun()はtfidfを重みにする */
+		ArrayList<ArrayList<Word>> list = tfidfrun();
+		ArrayList<ArrayList<Word>> queryList = queryruntfidf(list);
 		ArrayList<ArrayList<Result>> searchResultCos = new ArrayList<>();
-		ArrayList<ArrayList<Result>> searchResultCosWithoutNos = new ArrayList<>();
 		ArrayList<ArrayList<Result>> searchResultJac = new ArrayList<>();
-		ArrayList<ArrayList<Result>> searchResultJacWithoutNos = new ArrayList<>();
 		ArrayList<ArrayList<Result>> searchResultDice = new ArrayList<>();
 		ArrayList<ArrayList<Result>> searchResultSimpson = new ArrayList<>();
 		
@@ -35,18 +36,6 @@ public class Classify {
 		}
 		
 		System.out.println();
-		System.out.println("Cosine without numbers");
-		//Create cosineMeasurement result list
-		for(int i = 0; i < queryList.size(); i++) {
-			double[] listResult = new double[list.size()];
-			for(int j = 0; j < list.size(); j++) {
-				listResult[j] = cosineCalcWithoutNos(list.get(j),queryList.get(i));
-			}
-			ArrayList<Result> result = findLargests(listResult, list.size());
-			searchResultCosWithoutNos.add(result);
-		}
-		
-		System.out.println();
 		System.out.println("Jaccard");
 		//Create jaccardMeasurement result list
 		for(int i = 0; i < queryList.size(); i++) {
@@ -54,60 +43,51 @@ public class Classify {
 			for(int j = 0; j < list.size(); j++) {
 				listResult[j] = jaccardCalc(list.get(j),queryList.get(i));
 			}
+			System.out.println();
 			ArrayList<Result> result = findLargests(listResult, list.size());
 			searchResultJac.add(result);
 		}
 		
 		System.out.println();
-		System.out.println("Jaccard without number");
-		//Create jaccardMeasurement result list
-		for(int i = 0; i < queryList.size(); i++) {
-			double[] listResult = new double[list.size()];
-			for(int j = 0; j < list.size(); j++) {
-				listResult[j] = jaccardCalcWithoutNos(list.get(j),queryList.get(i));
-			}
-			ArrayList<Result> result = findLargests(listResult, list.size());
-			searchResultJacWithoutNos.add(result);
-		}
-		
-		System.out.println();
 		System.out.println("Dice");
-		//Create jaccardMeasurement result list
+		//Create diceMeasurement result list
 		for(int i = 0; i < queryList.size(); i++) {
 			double[] listResult = new double[list.size()];
 			for(int j = 0; j < list.size(); j++) {
 				listResult[j] = diceCalc(list.get(j),queryList.get(i));
 			}
+			System.out.println();
 			ArrayList<Result> result = findLargests(listResult, list.size());
 			searchResultDice.add(result);
 		}
 		
 		System.out.println();
 		System.out.println("Simpson");
-		//Create jaccardMeasurement result list
+		//Create simpsonMeasurement result list
 		for(int i = 0; i < queryList.size(); i++) {
 			double[] listResult = new double[list.size()];
 			for(int j = 0; j < list.size(); j++) {
 				listResult[j] = simpsonCalc(list.get(j),queryList.get(i));
 			}
+			System.out.println();
 			ArrayList<Result> result = findLargests(listResult, list.size());
 			searchResultSimpson.add(result);
 		}
 		
 		System.out.println("Printing cosine measurement results...");
 		printResult(searchResultCos);
-		System.out.println("Printing cosinewtnumbers measurement results...");
-		printResult(searchResultCosWithoutNos);
 		System.out.println("Printing jaccard measurement results...");
-		printResult(searchResultJac);			
-		System.out.println("Printing jaccardwtnos measurement results...");
-		printResult(searchResultJacWithoutNos);		
+		printResult(searchResultJac);		
 		System.out.println("Printing dice measurement results...");
 		printResult(searchResultDice);
 		System.out.println("Printing simpson measurement results...");
 		printResult(searchResultSimpson);
 	}
 
+	/**
+	 * 検索結果を出力する
+	 * @param searchResult 検索結果リスト
+	 */
 	private static void printResult(ArrayList<ArrayList<Result>> searchResult) {
 		String answers[] = {"国際", "経済", "家庭", "科学", "芸能", "スポーツ", "芸能", "経済", "国際", "スポーツ"};
 		for(int i = 0; i < searchResult.size(); i++) {
@@ -125,7 +105,13 @@ public class Classify {
 		}
 		System.out.println();
 	}
-	 
+	
+	/**
+	 * 検索結果の中に最大値を探す
+	 * @param listResult 検索結果配列
+	 * @param size 配列の大きさ
+	 * @return 検索結果リスト
+	 */
 	private static ArrayList<Result> findLargests(double[] listResult, int size) {
 		ArrayList<Result> result = new ArrayList<>();
 		double max = -10000;
@@ -140,6 +126,12 @@ public class Classify {
 		return result;
 	}
 	
+	/**
+	 * 余弦尺度で計算する関数
+	 * @param subWordList	訓練データの中の1文書
+	 * @param subQueryList	テストデータの中の1文書
+	 * @return
+	 */
 	private static double cosineCalc(ArrayList<Word> subWordList, ArrayList<Word> subQueryList) {
 		double x2 = 0.0;
 		for(int i = 0; i < subWordList.size(); i++) {
@@ -165,47 +157,17 @@ public class Classify {
 		}
 		double down = Math.sqrt(x2*y2);
 		double result = inner_product/down;
-		System.out.println("x2:" + x2 + " y2:" + y2 + " inner_product:" + inner_product);
-		System.out.println(result);
+		//System.out.println("x2:" + x2 + " y2:" + y2 + " inner_product:" + inner_product);
+		System.out.print(result + " ");
 		return result;
 	}
 	
-	private static double cosineCalcWithoutNos(ArrayList<Word> subWordList, ArrayList<Word> subQueryList) {
-		double x2 = 0.0;
-		for(int i = 0; i < subWordList.size(); i++) {
-			double x = subWordList.get(i).return_val();
-			x2 += x*x;
-		}
-		double y2 = 0.0;
-		for(int i = 0; i < subQueryList.size(); i++) {
-			double y=subQueryList.get(i).return_val();
-			y2 += y*y;
-		}
-		double inner_product = 0.0;
-		for(int i = 0; i < subQueryList.size(); i++) {
-			String currentQSubWord = subQueryList.get(i).return_word();
-			double currentQSubVal = subQueryList.get(i).return_val();
-			for(int j = 0; j < subWordList.size(); j++) {
-				String currentLSubWord = subWordList.get(j).return_word();
-				double currentLSubVal = subWordList.get(j).return_val();
-				if(currentQSubWord.equals(currentLSubWord)) {
-					boolean flag = false;
-					for(int k = 0; k < 10; k++) {
-						if(currentQSubWord.equals(Integer.toString(k)))
-							flag = true;
-					}
-					if(!flag)
-						inner_product += currentQSubVal * currentLSubVal; 
-				}
-			}
-		}
-		double down = Math.sqrt(x2*y2);
-		double result = inner_product/down;
-		System.out.println("x2:" + x2 + " y2:" + y2 + " inner_product:" + inner_product);
-		System.out.println(result);
-		return result;
-	}
-	
+	/**
+	 * ジャッカード係数を計算する
+	 * @param subWordList	訓練データの中の1文書
+	 * @param subQueryList	テストデータの中の1文書
+	 * @return 計算結果
+	 */
 	private static double jaccardCalc(ArrayList<Word> subWordList, ArrayList<Word> subQueryList) {
 		double x2 = 0.0;
 		for(int i = 0; i < subWordList.size(); i++) {
@@ -232,50 +194,17 @@ public class Classify {
 		double up = inner_product;
 		double down = x2+y2-inner_product;
 		double result = up/down;
-		System.out.println("x2:" + x2 + " y2:" + y2 + " inner_product:" + inner_product);
-		System.out.println(result);
+		//System.out.println("x2:" + x2 + " y2:" + y2 + " inner_product:" + inner_product);
+		System.out.print(result + " ");
 		return result;
 	}
 	
-	private static double jaccardCalcWithoutNos(ArrayList<Word> subWordList, ArrayList<Word> subQueryList) {
-		double x2 = 0.0;
-		for(int i = 0; i < subWordList.size(); i++) {
-			double x = subWordList.get(i).return_val();
-			x2 += x*x;
-		}
-		double y2 = 0.0;
-		for(int i = 0; i < subQueryList.size(); i++) {
-			double y=subQueryList.get(i).return_val();
-			y2 += y*y;
-		}
-		double inner_product = 0.0;
-		for(int i = 0; i < subQueryList.size(); i++) {
-			String currentQSubWord = subQueryList.get(i).return_word();
-			double currentQSubVal = subQueryList.get(i).return_val();
-			for(int j = 0; j < subWordList.size(); j++) {
-				String currentLSubWord = subWordList.get(j).return_word();
-				double currentLSubVal = subWordList.get(j).return_val();
-				if(currentQSubWord.equals(currentLSubWord)) {
-					boolean flag = false;
-					for(int k = 0; k < 10; k++) {
-						if(currentQSubWord.equals(Integer.toString(k))) {
-							System.out.println(currentLSubWord + " " +currentLSubVal);
-							flag = true;
-						}
-					}
-					if(!flag)
-						inner_product += currentQSubVal * currentLSubVal; 
-				}
-			}
-		}
-		double up = inner_product;
-		double down = x2+y2-inner_product;
-		double result = up/down;
-		System.out.println("x2:" + x2 + " y2:" + y2 + " inner_product:" + inner_product);
-		System.out.println(result);
-		return result;
-	}
-	
+	/**
+	 * Dice係数を計算する
+	 * @param subWordList	訓練データの中の1文書
+	 * @param subQueryList	テストデータの中の1文書
+	 * @return 計算結果
+	 */
 	private static double diceCalc(ArrayList<Word> subWordList, ArrayList<Word> subQueryList) {
 		double x2 = 0.0;
 		for(int i = 0; i < subWordList.size(); i++) {
@@ -302,11 +231,17 @@ public class Classify {
 		double up = 2*inner_product;
 		double down = x2+y2;
 		double result = up/down;
-		System.out.println("x2:" + x2 + " y2:" + y2 + " inner_product:" + inner_product);
-		System.out.println(result);
+		//System.out.println("x2:" + x2 + " y2:" + y2 + " inner_product:" + inner_product);
+		System.out.print(result + " ");
 		return result;
 	}
 	
+	/**
+	 * Simpson係数を計算する
+	 * @param subWordList	訓練データの中の1文書
+	 * @param subQueryList	テストデータの中の1文書
+	 * @return 計算結果
+	 */
 	private static double simpsonCalc(ArrayList<Word> subWordList, ArrayList<Word> subQueryList) {
 		double inner_product = 0.0;
 		for(int i = 0; i < subQueryList.size(); i++) {
@@ -327,8 +262,8 @@ public class Classify {
 		else
 			down = subWordList.size();
 		double result = up/down;
-		System.out.println("inner_product:" + inner_product + " down:" + down);
-		System.out.println(result);
+		//System.out.println("inner_product:" + inner_product + " down:" + down);
+		System.out.print(result + " ");
 		return result;
 	}
 	
@@ -385,6 +320,7 @@ public class Classify {
 		}
 		 */
 
+		/* 新しい配列を生成し、その4番目の要素を0で初期化する */
 		String trainwdf[][] = new String[train_height][train_width+1];
 		for(int y = 0; y < train_height; y++) {
 			for(int x = 0; x < train_width; x++) {
@@ -414,13 +350,15 @@ public class Classify {
 		}
 
 		/* 最終的なリスト確認用 */
+		/*
 		for(int y = 0; y < train_height; y++) {
 			for(int x = 0; x < 5; x++) {
 				System.out.print(trainwtfidf[y][x] + " ");
 			}
 			System.out.println();
 		}
-
+		 */
+		
 		/* 管理を簡単にするために、ArrayListに保存する */
 		ArrayList<ArrayList<Word>> l = new ArrayList<>();
 		ArrayList<Word> w = new ArrayList<>();
@@ -502,70 +440,6 @@ public class Classify {
 			System.out.println();
 		}
 		 */
-
-		String trainwdf[][] = new String[train_height][train_width+2];
-		for(int y = 0; y < train_height; y++) {
-			for(int x = 0; x < train_width; x++) {
-				trainwdf[y][x] = train[y][x];
-			}
-			trainwdf[y][train_width] = "0";
-		}
-
-		/* ある単語に対して全文書のtfを計算し、4番目の要素に保存する */
-		for(int y = 0; y < train_height; y++) {
-			int count = 0;
-			for(int ysub = 0; ysub < train_height; ysub++) {
-				if(trainwdf[y][1].equals(trainwdf[ysub][1])) {
-					count = Integer.parseInt(trainwdf[y][3]);
-					count += Integer.parseInt(trainwdf[ysub][2]);
-					trainwdf[y][3] = Integer.toString(count);
-				}
-			}
-			trainwdf[y][4] = Double.toString(Double.parseDouble(trainwdf[y][2])/Double.parseDouble(trainwdf[y][3]));
-		}
-		
-		/* tfの確認用 */
-		/*
-		System.out.println();
-		for(int y = 0; y < train_height; y++) {
-			for(int x = 0; x < train_width+2; x++) {
-				System.out.print(trainwdf[y][x] + " ");
-			}
-			System.out.println();
-		}
-		System.out.println();
-		*/
-		
-		/* tfidfが5番目の要素となる配列を生成し、計算する */
-		String trainwnw[][] = new String[train_height][train_width+3];
-		for(int y = 0; y < train_height; y++) {
-			for(int x = 0; x < train_width+2; x++) {
-				trainwnw[y][x] = trainwdf[y][x];
-			}
-		}
-		for(int y = 0; y < train_height; y++) {
-			double count = 0;
-			for(int ysub = 0; ysub < train_height; ysub++) {
-				if(trainwnw[y][1].equals(trainwnw[ysub][1])) {
-					double tmp = Double.parseDouble(trainwnw[y][4]) * (log2(Double.parseDouble(trainwnw[y][4])));
-					count += tmp;
-				}
-			}
-			if(count != 0.0)
-				count = -1 * count;
-			double weight = log2(Double.parseDouble(trainwnw[y][3])) - count;
-			trainwnw[y][5] = Double.toString(weight);
-		}
-
-		/* 最終的なリスト確認用 */
-		/*
-		for(int y = 0; y < train_height; y++) {
-			for(int x = 0; x < train_width+3; x++) {
-				System.out.print(trainwnw[y][x] + " ");
-			}
-			System.out.println();
-		}
-		*/
 		
 		/* 管理を簡単にするために、ArrayListに保存する */
 		ArrayList<ArrayList<Word>> l = new ArrayList<>();
@@ -575,8 +449,8 @@ public class Classify {
 			//ArrayListはジャンルを保持できないため、0:国際, 1:経済, ..., 7:読書 のようにジャンルを数値化する
 			String genre[] = {"国際", "経済", "家庭", "科学", "芸能", "スポーツ", "文化", "読書"};
 			for(int y = 0; y < train_height; y++) {
-				if(trainwnw[y][0].equals(genre[i])) {
-					w.add(new Word(trainwnw[y][1], Double.parseDouble(trainwnw[y][2]), 0));
+				if(train[y][0].equals(genre[i])) {
+					w.add(new Word(train[y][1], Double.parseDouble(train[y][2]), 0));
 				}
 			}
 			l.add(w);
@@ -594,12 +468,10 @@ public class Classify {
 	}
 	
 	/**
-	 * テストデータの読み込みを行い、
-	 * 1つの文書に属する単語とその出現回数を1つのリストに保存し、全文書を扱うリストにそのリストを保存する。
-	 * 返り値が全文書のリストを扱うリストである。
-	 * @return 全文書のリストを扱うリスト
+	 * テストデータの読み込み作業と重み付け(出現回数)
+	 * @return テストデータ全体の単語と計算した出現回数の重みが入ったArrayList<ArrayList<Word>>のリスト
 	 */
-	public static ArrayList<ArrayList<Word>> queryrun(ArrayList<ArrayList<Word>> train_list) {
+	public static ArrayList<ArrayList<Word>> queryrun() {
 		ArrayList<ArrayList<Word>> list = new ArrayList<>();
 		/* ここからquery.freqのファイル読み込み処理 */
 		ArrayList<ArrayList<String>> query = new ArrayList<>();
@@ -626,6 +498,70 @@ public class Classify {
 		catch(IOException e) {
 			;
 		}
+
+		/* 確認用 */
+		/*
+		for(int i = 0; i < query.size(); i++) {
+			for(int j = 0; j < query.get(i).size(); j++) {
+				System.out.print(query.get(i).get(j) + " ");
+			}
+			System.out.println();
+		}
+		 */
+		/* ここまでquery.freqのファイル読み込み処理 */
+		for(int i = 1; i <= 10; i++) {
+			ArrayList<Word> w = new ArrayList<>();
+			for(int j = 0; j < query.size(); j++) {
+				if(query.get(j).get(0).equals(Integer.toString(i))) {
+					Word currentWord = new Word(query.get(j).get(1), Double.parseDouble(query.get(j).get(2)), 0);
+					w.add(currentWord);
+				}
+			}
+			list.add(w);
+		}
+		for(int i= 0; i < list.size(); i++) {
+			for(int j = 0; j < list.get(i).size(); j++) {
+				Word w = list.get(i).get(j);
+				System.out.println(i + " "+ w.return_word() + " " + w.return_val());
+			}
+		}
+		return list;
+	}
+	
+	/**
+	 * テストデータの読み込み作業と重み付け(TFIDF値)
+	 * @return テストデータ全体の単語と計算したTFIDF値の重みが入ったArrayList<ArrayList<Word>>のリスト
+	 */
+	public static ArrayList<ArrayList<Word>> queryruntfidf(ArrayList<ArrayList<Word>> train_list) {
+		ArrayList<ArrayList<Word>> list = new ArrayList<>();
+		/* ここからquery.freqのファイル読み込み処理 */
+		ArrayList<ArrayList<String>> query = new ArrayList<>();
+		String fileName = "test.freq";
+		try(BufferedReader b = new BufferedReader(new FileReader(fileName)))
+		{
+			String currentLine;
+			while((currentLine = b.readLine()) != null) {
+				if(currentLine.isEmpty())
+					continue;
+
+
+				ArrayList<String> rows = new ArrayList<>();
+				String[] line = currentLine.trim().split(" ");
+				for(String string:line) {
+					if(!string.isEmpty()) {
+						rows.add(string);
+					}
+				}
+				query.add(rows);
+			}
+
+		}
+		catch(IOException e) {
+			;
+		}
+		/* ここまでquery.freqのファイル読み込み処理 */
+		
+		/* 最初のquery配列をArrayListから変換 */
 		String query_[][];
 		int query_height, query_width;
 		query_height = query.size();
@@ -637,59 +573,33 @@ public class Classify {
 			}
 		}
 		
-		String querywdf[][] = new String[query_height][query_width+1];
+		/* tfidfを持った配列を新しく生成 */
+		String querywtfidf[][] = new String[query_height][query_width+1];
 		for(int y = 0; y < query_height; y++) {
 			for(int x = 0; x < query_width; x++) {
-				querywdf[y][x] = query_[y][x];
+				querywtfidf[y][x] = query_[y][x];
 			}
-			querywdf[y][query_width] = "0";
-		}
-		
-		for(int y = 0; y < query_height; y++) {
-			for(int ysub = 0; ysub < query_height; ysub++) {
-				if(querywdf[y][1].equals(querywdf[ysub][1])) {
-					int count = Integer.parseInt(querywdf[y][query_width]);
-					count++;
-					querywdf[y][query_width] = Integer.toString(count);
-				}
-			}
-		}
-		
-		String querywtfidf[][] = new String[query_height][query_width+2];
-		for(int y = 0; y < query_height; y++) {
-			for(int x = 0; x < query_width+1; x++) {
-				querywtfidf[y][x] = querywdf[y][x];
-			}
+			/* 同じ単語が訓練データにも入っているかを判断するフラグ */
 			boolean flag = false;
-			querywtfidf[y][query_width+1] = "0.0";
+			querywtfidf[y][query_width] = "0.0";
 			for(int i = 0; i < train_list.size(); i++) {
 				for(int j = 0; j < train_list.get(i).size(); j++) {
 					if(querywtfidf[y][1].equals(train_list.get(i).get(j).return_word())) {
 						flag = true;
-						querywtfidf[y][query_width+1] = Double.toString(Double.parseDouble(querywtfidf[y][2]) * (log2(N/train_list.get(i).get(j).return_df_val()) + 1));
+						querywtfidf[y][query_width] = Double.toString(Double.parseDouble(querywtfidf[y][2]) * (log2(N/train_list.get(i).get(j).return_df_val()) + 1));
 					}
 				}
+				/* 無駄に処理をしないように同じ単語が一回でも出現すればbreakする */
 				if(flag)
 					break;
 			}
 		}
 		
-		/* 確認用 */
-		/*
-		for(int y = 0; y < query_height; y++) {
-			for(int x = 0; x < query_width+2; x++) {
-				System.out.print(querywtfidf[y][x] + " ");
-			}
-			System.out.println();
-		}
-		*/
-		/* ここまでquery.freqのファイル読み込み処理 */
-		
 		for(int i = 1; i <= 10; i++) {
 			ArrayList<Word> w = new ArrayList<>();
 			for(int j = 0; j < query.size(); j++) {
 				if(query.get(j).get(0).equals(Integer.toString(i))) {
-					Word currentWord = new Word(querywtfidf[j][1], Double.parseDouble(querywtfidf[j][query_width+1]), 0);
+					Word currentWord = new Word(querywtfidf[j][1], Double.parseDouble(querywtfidf[j][query_width]), 0);
 					w.add(currentWord);
 				}
 			}
@@ -697,10 +607,15 @@ public class Classify {
 		}
 		
 		for(int i= 0; i < list.size(); i++) {
+			int difference = 0;
 			for(int j = 0; j < list.get(i).size(); j++) {
 				Word w = list.get(i).get(j);
+				if(w.return_val() == 0.0) {
+					difference++;
+				}
 				System.out.println(i + " "+ w.return_word() + " " + w.return_val());
 			}
+			System.out.println("Difference: " + difference + " Total: " + list.get(i).size());
 		}
 		return list;
 	}
